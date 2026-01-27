@@ -134,7 +134,10 @@
                      class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"/>
             </div>
           </div>
-         
+            <button id="btn-sheets" class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-orange-100 text-orange-700 hover:bg-orange-200">
+  <i data-lucide="upload" class="w-5 h-5"></i> Setup Sheets
+</button>
+
 <button id="btn-csv" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
   <i data-lucide="download" class="w-5 h-5"></i> CSV
 </button>
@@ -447,7 +450,7 @@ function getGoogleSheetUrl() {
   return localStorage.getItem(SHEET_URL_KEY) || "";
 }
 function setGoogleSheetUrl(url) {
-  localStorage.setItem(SHEET_URL_KEY, https://script.google.com/macros/s/AKfycbx9UV7GzxNh8oXJY43_4Z--mO1UiVPiG9zUsPjZTHDdO9_zIWZmPNR9pJmQ3lTY4opeWA/exec);
+  localStorage.setItem(SHEET_URL_KEY, url);
 }
 async function pushOrderToSheet(order) {
   const webAppUrl = getGoogleSheetUrl(); // must be the Apps Script Web App URL
@@ -988,22 +991,17 @@ function init() {
   $("search").addEventListener("input", renderList);
   $("btn-csv").addEventListener("click", exportToCSV);
 
-  // If the sheets button/modal is removed, don't crash
-const btnSheets = $("btn-sheets");
-if (btnSheets) btnSheets.addEventListener("click", openSheetsModal);
-
-const sheetsClose = $("sheets-close");
-if (sheetsClose) sheetsClose.addEventListener("click", closeSheetsModal);
-
-const sheetsCancel = $("sheets-cancel");
-if (sheetsCancel) sheetsCancel.addEventListener("click", closeSheetsModal);
-
-const sheetsSave = $("sheets-save");
-if (sheetsSave) sheetsSave.addEventListener("click", () => {
+  $("btn-sheets").addEventListener("click", openSheetsModal);
+$("sheets-close").addEventListener("click", closeSheetsModal);
+$("sheets-cancel").addEventListener("click", closeSheetsModal);
+$("sheets-save").addEventListener("click", () => {
   setGoogleSheetUrl($("sheet-url").value.trim());
   closeSheetsModal();
   updateSheetsButton();
   showNotification("Google Sheet URL saved!", "success");
+});
+updateSheetsButton();
+
 });
 
 // Only update button UI if it exists
@@ -1081,6 +1079,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
