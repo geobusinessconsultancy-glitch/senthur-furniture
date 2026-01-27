@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -134,13 +135,14 @@
                      class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"/>
             </div>
           </div>
-            <button id="btn-sheets" class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-orange-100 text-orange-700 hover:bg-orange-200">
-  <i data-lucide="upload" class="w-5 h-5"></i> Setup Sheets
-</button>
 
-<button id="btn-csv" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
-  <i data-lucide="download" class="w-5 h-5"></i> CSV
-</button>
+          <button id="btn-sheets" class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-orange-100 text-orange-700 hover:bg-orange-200">
+            <i data-lucide="upload" class="w-5 h-5"></i> Setup Sheets
+          </button>
+
+          <button id="btn-csv" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+            <i data-lucide="download" class="w-5 h-5"></i> CSV
+          </button>
 
           <div id="total-badge" class="px-4 py-2 bg-gray-100 rounded-lg font-semibold">Total: 0</div>
         </div>
@@ -497,6 +499,7 @@ async function pushOrderToSheet(order) {
   const out = await res.json();
   if (!out.success) throw new Error(out.error || "Sheet write failed");
 }
+
 
 /* ------------------ UI NAV ------------------ */
 function showListView() {
@@ -983,7 +986,7 @@ function init() {
   // Load + render
   loadOrders();
   renderList();
- 
+  updateSheetsButton();
 
   // List events
   $("btn-new").addEventListener("click", () => showFormView(null));
@@ -992,21 +995,13 @@ function init() {
   $("btn-csv").addEventListener("click", exportToCSV);
 
   $("btn-sheets").addEventListener("click", openSheetsModal);
-$("sheets-close").addEventListener("click", closeSheetsModal);
-$("sheets-cancel").addEventListener("click", closeSheetsModal);
-$("sheets-save").addEventListener("click", () => {
-  setGoogleSheetUrl($("sheet-url").value.trim());
-  closeSheetsModal();
-  updateSheetsButton();
-  showNotification("Google Sheet URL saved!", "success");
-});
-updateSheetsButton();
-
-});
-
-// Only update button UI if it exists
-if (btnSheets) updateSheetsButton();
-
+  $("sheets-close").addEventListener("click", closeSheetsModal);
+  $("sheets-cancel").addEventListener("click", closeSheetsModal);
+  $("sheets-save").addEventListener("click", () => {
+    setGoogleSheetUrl($("sheet-url").value.trim());
+    closeSheetsModal();
+    updateSheetsButton();
+    showNotification("Google Sheet URL saved!", "success");
   });
 
   // Form events
@@ -1056,8 +1051,6 @@ if (btnSheets) updateSheetsButton();
     .catch((e) => showNotification("Sheets error: " + e.message, "error"));
   });
 
-
-
   // Receipt events
   $("receipt-close").addEventListener("click", () => {
     $("receipt-modal").classList.add("hidden");
@@ -1079,14 +1072,3 @@ init();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
