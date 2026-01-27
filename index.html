@@ -966,6 +966,8 @@ function updateSheetsButton() {
 /* ------------------ INIT ------------------ */
 function init() {
   // Apps Script text
+  const btn = $("btn-sheets");
+  if (btn) btn.style.display = "none";
   $("apps-script").textContent =
 `function doPost(e) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -1072,4 +1074,5 @@ init();
 </script>
 </body>
 </html>
+
 
