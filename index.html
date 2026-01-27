@@ -1008,13 +1008,47 @@ function init() {
 
   $("advanceAmount").addEventListener("input", recalcTotals);
 
-  saveOrder(order);
+  $("order-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-pushOrderToSheet(order)
-  .then(() => showNotification("Saved to Google Sheet ✅", "success"))
-  .catch((e) => showNotification("Sheets error: " + e.message, "error"));
+    const total = currentTotal();
+    const adv = Number($("advanceAmount").value || 0);
 
-showListView();
+    const now = new Date().toISOString();
+    const orderId = $("orderId").value || generateOrderId();
+
+    const isEdit = !!(currentEditOrder && currentEditOrder.orderId);
+
+    const order = {
+      orderId,
+      customerName: $("customerName").value.trim(),
+      address: $("address").value.trim(),
+      attendantName: $("attendantName").value.trim(),
+      mobile: $("mobile").value.trim(),
+      pincode: $("pincode").value.trim(),
+      bookingDate: $("bookingDate").value || new Date().toISOString().split("T")[0],
+      expectedDelivery: $("expectedDelivery").value || "",
+      orderType: "custom",
+      selectedCombo: "",
+      customItems: customItems,
+      totalAmount: total,
+      advanceAmount: adv,
+      balanceAmount: total - adv,
+      notes: $("notes").value.trim(),
+      status: isEdit ? $("status").value : "advance_received",
+      refundStatus: "none",
+      createdAt: isEdit ? (currentEditOrder.createdAt || now) : now,
+      updatedAt: now
+    };
+
+    saveOrder(order);
+    showListView();
+    pushOrderToSheet(order)
+    .then(() => showNotification("Saved to Google Sheet ✅", "success"))
+    .catch((e) => showNotification("Sheets error: " + e.message, "error"));
+  });
+
 
 
   // Receipt events
@@ -1038,5 +1072,6 @@ init();
 </script>
 </body>
 </html>
+
 
 
