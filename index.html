@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Senthur Furniture Orders</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+  @media print {
+    @page { size: A4; margin: 0; }
+
+    html, body { height: auto !important; }
+    body {
+      background: #fff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      overflow: visible !important;
+    }
+
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+
+    /* ✅ Force only the receipt content to print */
+    body * { visibility: hidden !important; }
+    #receipt-modal, #receipt-modal * { visibility: visible !important; }
+
+    /* ✅ Remove modal overlay sizing */
+    #receipt-modal{
+      position: fixed !important;
+      inset: 0 !important;
+      display: block !important;
+      background: transparent !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* ✅ The white “card” must NOT restrict A4 */
+    #receipt-modal > div{
+      width: 210mm !important;
+      max-width: 210mm !important;
+      height: 297mm !important;
+      max-height: 297mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+
+    /* ✅ Remove inner padding that pushes content to 2nd page */
+    #receipt-modal > div > div{
+      padding: 0 !important; /* was p-6 */
+      margin: 0 !important;
+    }
+
+    .receipt-sheet{
+      width: 210mm !important;
+      height: 297mm !important;     /* ✅ fixed height prevents 2 pages */
+      min-height: 297mm !important;
+      position: relative;
+      overflow: hidden !important;  /* ✅ prevents spilling to next page */
+      page-break-after: avoid !important;
+      page-break-inside: avoid !important;
+    }
+
+    .receipt-sheet::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: url("https://i.postimg.cc/fRTmH21q/GSTIN-33DNQPS5340B1ZZ-20260122-235847-0000.png") no-repeat center top;
+      background-size: cover;
+      z-index:0;
+    }
+
+    .receipt-body{
+      position:relative;
+      z-index:1;
+      padding: 68mm 14mm 18mm 14mm; /* adjust if needed */
+      height: 297mm;
+      box-sizing: border-box;
+      overflow: hidden;             /* ✅ no extra height */
+    }
+
+    table, tr, td, th { page-break-inside: avoid !important; }
+  }
+
+  .print-only { display: none; }
+</style>
+
+</head>
+
+<body class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <header class="bg-white border-b-4 border-green-600 shadow-sm no-print">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center gap-4">
+        <!-- Image logo -->
+        <div class="w-20 h-20 flex-shrink-0 bg-white rounded-lg border border-gray-200 p-1">
+          <img src="https://i.postimg.cc/xdH3rG6k/mailu.png" alt="Senthur Furniture Logo" class="w-full h-full object-contain"/>
+        </div>
+
+        <div class="flex-1">
+          <h1 class="text-2xl font-bold text-gray-900">ஸ்ரீ செந்தூர் பர்னிச்சர்ஸ்</h1>
+          <p class="text-lg text-gray-600">Senthur Furniture</p>
+          <p class="text-sm text-gray-500">📞 74488 12333, 74489 12333</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification -->
+  <div id="notification" class="fixed top-20 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium hidden no-print"></div>
+
+  <!-- App container -->
+  <main class="max-w-7xl mx-auto px-4 py-6 no-print">
+    <!-- List View -->
+    <section id="view-list" class="space-y-4">
+      <div class="bg-white rounded-lg shadow-sm p-4">
+        <div class="flex flex-wrap gap-3 items-center">
+          <button id="btn-new" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+            <i data-lucide="plus" class="w-5 h-5"></i> New Order
+          </button>
+
+          <div class="flex-1 min-w-64">
+            <div class="relative">
+              <i data-lucide="search" class="absolute left-3 top-2.5 text-gray-400 w-5 h-5"></i>
+              <input id="search" type="text" placeholder="Search by Order ID, Name, or Mobile..."
+                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"/>
+            </div>
+          </div>
+
+          <button id="btn-sheets" class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-orange-100 text-orange-700 hover:bg-orange-200">
+            <i data-lucide="upload" class="w-5 h-5"></i> Setup Sheets
+          </button>
+
+          <button id="btn-csv" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+            <i data-lucide="download" class="w-5 h-5"></i> CSV
+          </button>
+
+          <div id="total-badge" class="px-4 py-2 bg-gray-100 rounded-lg font-semibold">Total: 0</div>
+        </div>
+      </div>
+
+      <div id="orders-grid" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
+
+      <div id="empty-state" class="bg-white rounded-lg shadow-sm p-12 text-center hidden">
+        <p class="text-gray-500 text-lg">No orders found</p>
+        <button id="btn-first" class="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+          Create First Order
+        </button>
+      </div>
+    </section>
+
+    <!-- Form View -->
+    <section id="view-form" class="hidden">
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h2 id="form-title" class="text-2xl font-bold text-gray-900">New Order</h2>
+          <button id="btn-cancel-top" class="text-gray-500 hover:text-gray-700">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+        <form id="order-form" class="space-y-6">
+          <input type="hidden" id="orderId"/>
+
+          <!-- Customer Info -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Customer Information</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
+                <input id="customerName" type="text" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
+                <p id="err-customerName" class="text-red-600 text-sm mt-1 hidden">Required</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Mobile *</label>
+                <input id="mobile" type="tel" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
+                <p id="err-mobile" class="text-red-600 text-sm mt-1 hidden">Required</p>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Address *</label>
+                <textarea id="address" rows="2" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"></textarea>
+                <p id="err-address" class="text-red-600 text-sm mt-1 hidden">Required</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Pincode *</label>
+                <input id="pincode" type="text" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
+                <p id="err-pincode" class="text-red-600 text-sm mt-1 hidden">Required</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Attendant *</label>
+                <input id="attendantName" type="text" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
+                <p id="err-attendantNameiame" class="text-red-600 text-sm mt-1 hidden">Required</p>
+                <p id="err-attendantName" class="text-red-600 text-sm mt-1 hidden">Required</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Booking Date</label>
+                <input id="bookingDate" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"/>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Expected Delivery</label>
+                <input id="expectedDelivery" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Type -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Order Type</h3>
+            <div class="flex gap-4">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input id="type-combo" type="radio" name="orderType" value="combo" class="w-4 h-4 text-green-600" checked>
+                <span class="font-medium">Combo Package</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input id="type-custom" type="radio" name="orderType" value="custom" class="w-4 h-4 text-green-600">
+                <span class="font-medium">Custom Items</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Combo section -->
+          <div id="combo-section">
+            <h3 class="text-lg font-semibold mb-4">Select Combo</h3>
+            <div id="combo-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          </div>
+
+          <!-- Custom items section -->
+          <div id="custom-section" class="hidden">
+            <h3 class="text-lg font-semibold mb-4">Select Items</h3>
+            <p id="err-items" class="text-red-600 text-sm mb-2 hidden">Select at least one item</p>
+            <div id="custom-items" class="space-y-2"></div>
+          </div>
+
+          <!-- Payment -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Payment</h3>
+            <div class="bg-gray-50 p-4 rounded-lg space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="font-medium">Total:</span>
+                <span id="totalAmount" class="text-xl font-bold">₹0</span>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Advance *</label>
+                <input id="advanceAmount" type="number" min="0" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500" value="0"/>
+                <p id="err-advanceAmount" class="text-red-600 text-sm mt-1 hidden"></p>
+              </div>
+
+              <div class="flex justify-between items-center pt-3 border-t">
+                <span class="font-medium">Balance:</span>
+                <span id="balanceAmount" class="text-xl font-bold text-red-600">₹0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <textarea id="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
+          </div>
+
+          <!-- Status (only when editing) -->
+          <div id="status-wrap" class="hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select id="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+              <option value="advance_received">Advance Received</option>
+              <option value="production">In Production</option>
+              <option value="ready_for_delivery">Ready for Delivery</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="refunded">Refunded</option>
+            </select>
+          </div>
+
+          <div class="flex gap-3 pt-4 border-t">
+            <button type="submit" id="btn-save" class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
+              Create Order
+            </button>
+            <button type="button" id="btn-cancel" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
+              Cancel
+            </button>
+          </div>
+
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <p class="text-sm text-yellow-800"><strong>Note:</strong> Delivery date subject to change.</p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- Receipt Modal -->
+  <div id="receipt-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6 no-print">
+          <h2 class="text-2xl font-bold">Receipt</h2>
+          <button id="receipt-close" class="text-gray-500 hover:text-gray-700">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+        <!-- A4 print sheet with background -->
+        <div class="receipt-sheet">
+          <div class="receipt-body">
+            <div id="receipt-content" class="space-y-4"></div>
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-6 no-print">
+          <button id="receipt-print" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
+            <i data-lucide="printer" class="w-5 h-5"></i> Print
+          </button>
+          <button id="receipt-close-2" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Sheets Setup Modal -->
+  <div id="sheets-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4 no-print">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">Google Sheets Integration</h2>
+        <button id="sheets-close" class="text-gray-500 hover:text-gray-700">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Google Sheet URL</label>
+          <input id="sheet-url" type="text" placeholder="https://docs.google.com/spreadsheets/d/YOUR_ID/edit"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"/>
+        </div>
+
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+          <h3 class="font-bold text-blue-900 mb-2">Setup Steps:</h3>
+          <ol class="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+            <li>Create or open a Google Sheet</li>
+            <li>Paste the sheet URL above</li>
+            <li>Go to Extensions → Apps Script</li>
+            <li>Paste the script below and deploy as web app</li>
+          </ol>
+        </div>
+
+        <div class="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">
+          <pre id="apps-script" class="whitespace-pre-wrap"></pre>
+        </div>
+
+        <div class="bg-green-50 border-l-4 border-green-400 p-4">
+          <p class="text-sm text-green-800">
+            Orders will be automatically saved to monthly sheets (e.g., January_2026)
+          </p>
+        </div>
+
+        <div class="flex gap-3">
+          <button id="sheets-save" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
+            Save URL
+          </button>
+          <button id="sheets-cancel" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ------------------ DATA ------------------ */
+const COMBOS = {
+  COMBO_1: { name: 'BEDROOM STARTER', items: [{ name:'BED', qty:1, price:15000 }, { name:'PILLOW', qty:2, price:800 }], total:16600 },
+  COMBO_2: { name: 'LIVING ROOM BASIC', items: [{ name:'SOFA', qty:1, price:25000 }, { name:'TV STAND', qty:1, price:8000 }, { name:'TEA POY', qty:1, price:5000 }], total:38000 },
+  COMBO_3: { name: 'DINING SET', items: [{ name:'DINING TABLE', qty:1, price:18000 }, { name:'CHAIR', qty:4, price:3500 }], total:32000 },
+  COMBO_4: { name: 'HOME OFFICE', items: [{ name:'COMPUTER TABLE', qty:1, price:12000 }, { name:'CHAIR', qty:1, price:3500 }], total:15500 },
+  COMBO_5: { name: 'COMPLETE BEDROOM', items: [{ name:'BED', qty:1, price:20000 }, { name:'DRESSING TABLE', qty:1, price:9000 }, { name:'PILLOW', qty:2, price:1000 }], total:31000 },
+  COMBO_6: { name: 'FULL HOME PACKAGE', items: [{ name:'BED', qty:1, price:18000 }, { name:'SOFA', qty:1, price:22000 }, { name:'DINING TABLE', qty:1, price:15000 }, { name:'CHAIR', qty:4, price:3000 }], total:76000 }
+};
+
+const FURNITURE_ITEMS = [
+  'COT','BED','PILLOW','BERO','DRESSING TABLE','SOFA',
+  'DINING TABLE','COMPUTER TABLE','TV STAND','POOJA STAND',
+  'TEA POY','CHAIR'
+];
+
+const STORAGE_PREFIX = "order:";
+const SHEET_URL_KEY = "google-sheet-url";
+
+/* ------------------ STATE ------------------ */
+let orders = [];
+let currentEditOrder = null; // object or null
+let selectedComboKey = "COMBO_1";
+let customItems = {}; // { ITEM: {qty, price} }
+let currentOrderType = "combo";
+
+/* ------------------ HELPERS ------------------ */
+const $ = (id) => document.getElementById(id);
+
+function showNotification(message, type="info") {
+  const el = $("notification");
+  el.textContent = message;
+  el.classList.remove("hidden");
+  el.classList.remove("bg-green-600","bg-red-600","bg-blue-600");
+  el.classList.add(type==="success" ? "bg-green-600" : type==="error" ? "bg-red-600" : "bg-blue-600");
+  setTimeout(() => el.classList.add("hidden"), 2500);
+}
+
+function formatINR(n) {
+  try { return "₹" + Number(n || 0).toLocaleString("en-IN"); }
+  catch { return "₹" + (n || 0); }
+}
+
+function generateOrderId() {
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 9000) + 1000;
+  return `CUST-${timestamp}-${random}`;
+}
+
+function loadOrders() {
+  orders = [];
+  for (let i=0; i<localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(STORAGE_PREFIX)) {
+      try {
+        const value = JSON.parse(localStorage.getItem(key));
+        orders.push(value);
+      } catch {}
+    }
+  }
+  orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+function saveOrder(order_toggle) {
+  localStorage.setItem(`${STORAGE_PREFIX}${order_toggle.orderId}`, JSON.stringify(order_toggle));
+  loadOrders();
+  renderList();
+  showNotification("Order saved successfully!", "success");
+}
+
+function deleteOrder(orderId) {
+  if (!confirm("Are you sure you want to delete this order?")) return;
+  localStorage.removeItem(`${STORAGE_PREFIX}${orderId}`);
+  loadOrders();
+  renderList();
+  showNotification("Order deleted", "success");
+}
+
+function getGoogleSheetUrl() {
+  return localStorage.getItem(SHEET_URL_KEY) || "";
+}
+function setGoogleSheetUrl(url) {
+  localStorage.setItem(SHEET_URL_KEY, url);
+}
+
+/* ------------------ UI NAV ------------------ */
+function showListView() {
+  $("view-form").classList.add("hidden");
+  $("view-list").classList.remove("hidden");
+  currentEditOrder = null;
+}
+function showFormView(editOrder=null) {
+  $("view-list").classList.add("hidden");
+  $("view-form").classList.remove("hidden");
+  currentEditOrder = editOrder;
+  fillForm(editOrder);
+}
+
+/* ------------------ LIST RENDER ------------------ */
+function statusBadgeClass(status) {
+  if (status === "delivered") return "bg-green-100 text-green-800";
+  if (status === "ready_for_delivery") return "bg-blue-100 text-blue-800";
+  if (status === "refunded") return "bg-red-100 text-red-800";
+  return "bg-yellow-100 text-yellow-800";
+}
+
+function renderList() {
+  const term = ($("search").value || "").toLowerCase().trim();
+  const filtered = orders.filter(o => {
+    return (o.orderId || "").toLowerCase().includes(term) ||
+           (o.customerName || "").toLowerCase().includes(term) ||
+           (o.mobile || "").includes(term);
+  });
+
+  $("total-badge").textContent = `Total: ${orders.length}`;
+
+  const grid = $("orders-grid");
+  grid.innerHTML = "";
+
+  if (filtered.length === 0) {
+    $("empty-state").classList.remove("hidden");
+  } else {
+    $("empty-state").classList.add("hidden");
+  }
+
+  filtered.forEach(order => {
+    const card = document.createElement("div");
+    card.className = "bg-white rounded-lg shadow-sm p-4 border-l-4 border-green-600";
+
+    const createdDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "";
+
+    card.innerHTML = `
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <p class="text-xs text-gray-500">Order ID</p>
+          <p class="font-mono text-sm font-semibold">${order.orderId}</p>
+        </div>
+        <span class="px-2 py-1 text-xs rounded-full ${statusBadgeClass(order.status)}">
+          ${(order.status || "").replace(/_/g," ").toUpperCase()}
+        </span>
+      </div>
+
+      <div class="space-y-1 mb-3 text-sm">
+        <p class="font-semibold text-gray-900">${order.customerName || ""}</p>
+        <p class="text-gray-600">📱 ${order.mobile || ""}</p>
+        <p class="text-gray-600 truncate">📍 ${order.address || ""}</p>
+        <p class="text-gray-500 text-xs">${createdDate}</p>
+      </div>
+
+      <div class="border-t pt-3 mb-3 space-y-1 text-sm">
+        <div class="flex justify-between"><span class="text-gray-600">Total:</span><span class="font-semibold">${formatINR(order.totalAmount)}</span></div>
+        <div class="flex justify-between"><span class="text-gray-600">Advance:</span><span class="text-green-600 font-semibold">${formatINR(order.advanceAmount)}</span></div>
+        <div class="flex justify-between"><span class="text-gray-600">Balance:</span><span class="text-red-600 font-semibold">${formatINR(order.balanceAmount)}</span></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="btn-print flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium">
+          <i data-lucide="printer" class="w-4 h-4"></i> Print
+        </button>
+        <button class="btn-edit flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-sm font-medium">
+          <i data-lucide="edit-2" class="w-4 h-4"></i> Edit
+        </button>
+        <button class="btn-delete px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded" title="Delete">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+
+    card.querySelector(".btn-print").addEventListener("click", () => openReceipt(order));
+    card.querySelector(".btn-edit").addEventListener("click", () => showFormView(order));
+    card.querySelector(".btn-delete").addEventListener("click", () => deleteOrder(order.orderId));
+
+    grid.appendChild(card);
+  });
+
+  lucide.createIcons();
+}
+
+/* ------------------ FORM ------------------ */
+function clearErrors() {
+  ["customerName","mobile","address","pincode","attendantName"].forEach(k => {
+    const err = $("err-" + k);
+    if (err) err.classList.add("hidden");
+  });
+  $("err-items").classList.add("hidden");
+  $("err-advanceAmount").classList.add("hidden");
+  $("err-advanceAmount").textContent = "";
+}
+
+function buildComboGrid() {
+  const wrap = $("combo-grid");
+  wrap.innerHTML = "";
+  Object.entries(COMBOS).forEach(([key, combo]) => {
+    const div = document.createElement("div");
+    div.className = "p-4 border-2 rounded-lg cursor-pointer border-gray-300 hover:border-green-400";
+    div.dataset.comboKey = key;
+
+    div.innerHTML = `
+      <h4 class="font-bold mb-2">${combo.name}</h4>
+      <ul class="text-sm space-y-1 mb-3">
+        ${combo.items.map(it => `<li class="text-gray-600">${it.qty}x ${it.name}</li>`).join("")}
+      </ul>
+      <p class="font-bold text-green-600">${formatINR(combo.total)}</p>
+    `;
+
+    div.addEventListener("click", () => {
+      selectedComboKey = key;
+      updateComboSelectionUI();
+      recalcTotals();
+    });
+
+    wrap.appendChild(div);
+  });
+}
+
+function updateComboSelectionUI() {
+  const cards = $("combo-grid").querySelectorAll("[data-combo-key]");
+  cards.forEach(card => {
+    const isSel = card.dataset.comboKey === selectedComboKey;
+    card.className = "p-4 border-2 rounded-lg cursor-pointer " + (isSel
+      ? "border-green-600 bg-green-50"
+      : "border-gray-300 hover:border-green-400");
+  });
+}
+
+function buildCustomItems() {
+  const wrap = $("custom-items");
+  wrap.innerHTML = "";
+  FURNITURE_ITEMS.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "flex items-center gap-4 p-3 border rounded-lg";
+
+    const checked = !!customItems[item];
+    row.innerHTML = `
+      <input type="checkbox" class="w-5 h-5 text-green-600" ${checked ? "checked" : ""} />
+      <span class="flex-1 font-medium">${item}</span>
+      <div class="custom-controls ${checked ? "" : "hidden"} flex items-center gap-2 flex-wrap justify-end">
+        <input type="number" min="1" class="qty w-20 px-2 py-1 border border-gray-300 rounded" placeholder="Qty" value="${checked ? customItems[item].qty : 1}">
+        <span>×</span>
+        <input type="number" min="0" class="price w-32 px-2 py-1 border border-gray-300 rounded" placeholder="Price" value="${checked ? customItems[item].price : 0}">
+        <span class="lineTotal font-semibold w-32 text-right">= ${formatINR(checked ? (customItems[item].qty * customItems[item].price) : 0)}</span>
+      </div>
+    `;
+
+    const checkbox = row.querySelector("input[type=checkbox]");
+    const controls = row.querySelector(".custom-controls");
+    const qtyEl = row.querySelector(".qty");
+    const priceEl = row.querySelector(".price");
+    const lineTotalEl = row.querySelector(".lineTotal");
+
+    function updateLineTotal() {
+      const qty = Number(qtyEl.value || 0);
+      const price = Number(priceEl.value || 0);
+      lineTotalEl.textContent = "= " + formatINR(qty * price);
+    }
+
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        customItems[item] = { qty: 1, price: 0 };
+        controls.classList.remove("hidden");
+      } else {
+        delete customItems[item];
+        controls.classList.add("hidden");
+      }
+      updateLineTotal();
+      recalcTotals();
+    });
+
+    qtyEl.addEventListener("input", () => {
+      if (!customItems[item]) return;
+      customItems[item].qty = Number(qtyEl.value || 0);
+      updateLineTotal();
+      recalcTotals();
+    });
+
+    priceEl.addEventListener("input", () => {
+      if (!customItems[item]) return;
+      customItems[item].price = Number(priceEl.value || 0);
+      updateLineTotal();
+      recalcTotals();
+    });
+
+    wrap.appendChild(row);
+  });
+}
+
+function currentTotal() {
+  if (currentOrderType === "combo") {
+    return COMBOS[selectedComboKey].total;
+  }
+  return Object.entries(customItems).reduce((sum,[_,d]) => sum + (Number(d.qty||0)*Number(d.price||0)), 0);
+}
+
+function recalcTotals() {
+  const total = currentTotal();
+  const advance = Number($("advanceAmount").value || 0);
+  const balance = total - advance;
+
+  $("totalAmount").textContent = formatINR(total);
+  $("balanceAmount").textContent = formatINR(balance);
+}
+
+function fillForm(order) {
+  clearErrors();
+  buildComboGrid();
+
+  // default values
+  const today = new Date().toISOString().split("T")[0];
+  $("bookingDate").value = today;
+
+  // reset state
+  customItems = {};
+  selectedComboKey = "COMBO_1";
+  currentOrderType = "combo";
+  $("type-combo").checked = true;
+  $("type-custom").checked = false;
+
+  // edit/new UI bits
+  const isEdit = !!order;
+  $("form-title").textContent = isEdit ? "Edit Order" : "New Order";
+  $("btn-save").textContent = isEdit ? "Update Order" : "Create Order";
+  $("status-wrap").classList.toggle("hidden", !isEdit);
+
+  if (!order) {
+    $("orderId").value = "";
+    $("customerName").value = "";
+    $("mobile").value = "";
+    $("address").value = "";
+    $("pincode").value = "";
+    $("attendantName").value = "";
+    $("expectedDelivery").value = "";
+    $("advanceAmount").value = 0;
+    $("notes").value = "";
+    $("status").value = "advance_received";
+    $("combo-section").classList.remove("hidden");
+    $("custom-section").classList.add("hidden");
+    updateComboSelectionUI();
+    buildCustomItems();
+    recalcTotals();
+    return;
+  }
+
+  // fill from order
+  $("orderId").value = order.orderId || "";
+  $("customerName").value = order.customerName || "";
+  $("mobile").value = order.mobile || "";
+  $("address").value = order.address || "";
+  $("pincode").value = order.pincode || "";
+  $("attendantName").value = order.attendantName || "";
+  $("bookingDate").value = order.bookingDate || today;
+  $("expectedDelivery").value = order.expectedDelivery || "";
+  $("advanceAmount").value = Number(order.advanceAmount || 0);
+  $("notes").value = order.notes || "";
+  $("status").value = order.status || "advance_received";
+
+  currentOrderType = order.orderType || "combo";
+  if (currentOrderType === "combo") {
+    $("type-combo").checked = true;
+    $("combo-section").classList.remove("hidden");
+    $("custom-section").classList.add("hidden");
+    selectedComboKey = order.selectedCombo || "COMBO_1";
+  } else {
+    $("type-custom").checked = true;
+    $("combo-section").classList.add("hidden");
+    $("custom-section").classList.remove("hidden");
+    customItems = order.customItems || {};
+  }
+
+  updateComboSelectionUI();
+  buildCustomItems();
+  recalcTotals();
+}
+
+function validateForm() {
+  clearErrors();
+  let ok = true;
+
+  function req(id) {
+    const val = ($(id).value || "").trim();
+    if (!val) {
+      $("err-" + id).classList.remove("hidden");
+      ok = false;
+    }
+  }
+
+  req("customerName");
+  req("mobile");
+  req("address");
+  req("pincode");
+  req("attendantName");
+
+  const total = currentTotal();
+  const adv = Number($("advanceAmount").value || 0);
+
+  if (adv < 0) {
+    $("err-advanceAmount").textContent = "Invalid";
+    $("err-advanceAmount").classList.remove("hidden");
+    ok = false;
+  } else if (adv > total) {
+    $("err-advanceAmount").textContent = "Cannot exceed total";
+    $("err-advanceAmount").classList.remove("hidden");
+    ok = false;
+  }
+
+  if (currentOrderType === "custom" && Object.keys(customItems).length === 0) {
+    $("err-items").classList.remove("hidden");
+    ok = false;
+  }
+
+  return ok;
+}
+
+/* ------------------ RECEIPT ------------------ */
+function getOrderItems(order) {
+  if (order.orderType === "combo") return COMBOS[order.selectedCombo].items;
+  return Object.entries(order.customItems || {}).map(([name,data]) => ({ name, qty:Number(data.qty||0), price:Number(data.price||0) }));
+}
+
+function openReceipt(order) {
+  const items = getOrderItems(order);
+  const bookingDate = order.bookingDate ? new Date(order.bookingDate).toLocaleDateString() : "";
+
+  const rows = items.map(it => `
+    <tr class="border-b">
+      <td class="py-2">${it.name}</td>
+      <td class="text-center py-2">${it.qty}</td>
+      <td class="text-right py-2">${formatINR(it.price)}</td>
+      <td class="text-right py-2 font-semibold">${formatINR(it.qty * it.price)}</td>
+    </tr>
+  `).join("");
+
+  $("receipt-content").innerHTML = `
+    <div class="bg-gray-50 p-4 rounded-lg print:bg-white print:border">
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <p class="text-gray-600">Order ID</p>
+          <p class="font-mono font-bold">${order.orderId}</p>
+        </div>
+        <div>
+          <p class="text-gray-600">Date</p>
+          <p class="font-semibold">${bookingDate}</p>
+        </div>
+        <div>
+          <p class="text-gray-600">Status</p>
+          <p class="font-semibold capitalize">${(order.status||"").replace(/_/g," ")}</p>
+        </div>
+        <div>
+          <p class="text-gray-600">Attendant</p>
+          <p class="font-semibold">${order.attendantName || ""}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t pt-4 print:border-gray-300">
+      <h3 class="font-bold text-lg mb-2">Customer</h3>
+      <div class="space-y-1 text-sm">
+        <p><strong>Name:</strong> ${order.customerName || ""}</p>
+        <p><strong>Mobile:</strong> ${order.mobile || ""}</p>
+        <p><strong>Address:</strong> ${order.address || ""}</p>
+        <p><strong>Pincode:</strong> ${order.pincode || ""}</p>
+      </div>
+    </div>
+
+    <div class="border-t pt-4 print:border-gray-300">
+      <h3 class="font-bold text-lg mb-2">Items</h3>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b">
+            <th class="text-left py-2">Item</th>
+            <th class="text-center py-2">Qty</th>
+            <th class="text-right py-2">Price</th>
+            <th class="text-right py-2">Total</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="border-t pt-4 bg-gray-50 p-4 rounded-lg print:bg-white">
+      <div class="space-y-2">
+        <div class="flex justify-between text-lg">
+          <span class="font-semibold">Total:</span>
+          <span class="font-bold">${formatINR(order.totalAmount)}</span>
+        </div>
+        <div class="flex justify-between text-green-600">
+          <span class="font-semibold">Advance:</span>
+          <span class="font-bold">${formatINR(order.advanceAmount)}</span>
+        </div>
+        <div class="flex justify-between text-red-600 text-xl border-t pt-2">
+          <span class="font-bold">Balance:</span>
+          <span class="font-bold">${formatINR(order.balanceAmount)}</span>
+        </div>
+      </div>
+    </div>
+
+    ${order.notes ? `
+      <div class="border-t pt-4">
+        <h3 class="font-bold mb-1">Notes</h3>
+        <p class="text-sm">${order.notes}</p>
+      </div>
+    ` : ""}
+
+      `;
+
+  $("receipt-modal").classList.remove("hidden");
+  $("receipt-modal").classList.add("flex");
+  lucide.createIcons();
+}
+
+/* ------------------ CSV ------------------ */
+function exportToCSV() {
+  const headers = ['Order ID','Date','Customer','Mobile','Address','Pincode','Attendant','Type','Items','Total','Advance','Balance','Status'];
+  const rows = orders.map(o => {
+    let itemsList = '';
+    if (o.orderType === 'combo') {
+      const combo = COMBOS[o.selectedCombo];
+      itemsList = combo.items.map(item => `${item.qty}x ${item.name}`).join('; ');
+    } else {
+      itemsList = Object.entries(o.customItems || {}).map(([name, data]) => `${data.qty}x ${name}`).join('; ');
+    }
+    return [
+      o.orderId,
+      new Date(o.createdAt).toLocaleString(),
+      o.customerName,
+      o.mobile,
+      o.address,
+      o.pincode,
+      o.attendantName,
+      o.orderType,
+      itemsList,
+      o.totalAmount,
+      o.advanceAmount,
+      o.balanceAmount,
+      o.status
+    ];
+  });
+
+  const csv = [headers, ...rows]
+    .map(row => row.map(cell => `"${String(cell ?? "").replace(/"/g,'""')}"`).join(','))
+    .join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `furniture-orders-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  showNotification("Exported to CSV", "success");
+}
+
+/* ------------------ SHEETS MODAL ------------------ */
+function openSheetsModal() {
+  $("sheet-url").value = getGoogleSheetUrl();
+  $("sheets-modal").classList.remove("hidden");
+  $("sheets-modal").classList.add("flex");
+}
+function closeSheetsModal() {
+  $("sheets-modal").classList.add("hidden");
+  $("sheets-modal").classList.remove("flex");
+}
+
+function updateSheetsButton() {
+  const url = getGoogleSheetUrl();
+  const btn = $("btn-sheets");
+  if (url) {
+    btn.className = "flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-green-100 text-green-700 hover:bg-green-200";
+    btn.innerHTML = `<i data-lucide="upload" class="w-5 h-5"></i> Sheets ✓`;
+  } else {
+    btn.className = "flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-orange-100 text-orange-700 hover:bg-orange-200";
+    btn.innerHTML = `<i data-lucide="upload" class="w-5 h-5"></i> Setup Sheets`;
+  }
+  lucide.createIcons();
+}
+
+/* ------------------ INIT ------------------ */
+function init() {
+  // Apps Script text
+  $("apps-script").textContent =
+`function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var data = JSON.parse(e.postData.contents);
+  var sheetName = data.sheetName;
+  var targetSheet = sheet.getSheetByName(sheetName);
+
+  if (!targetSheet) {
+    targetSheet = sheet.insertSheet(sheetName);
+    targetSheet.appendRow(['Order ID', 'Date', 'Customer', 'Mobile', 'Address', 'Pincode', 'Attendant', 'Type', 'Items', 'Total', 'Advance', 'Balance', 'Status']);
+  }
+
+  targetSheet.appendRow(data.rowData);
+  return ContentService.createTextOutput(JSON.stringify({success: true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+  // Load + render
+  loadOrders();
+  renderList();
+  updateSheetsButton();
+
+  // List events
+  $("btn-new").addEventListener("click", () => showFormView(null));
+  $("btn-first").addEventListener("click", () => showFormView(null));
+  $("search").addEventListener("input", renderList);
+  $("btn-csv").addEventListener("click", exportToCSV);
+
+  $("btn-sheets").addEventListener("click", openSheetsModal);
+  $("sheets-close").addEventListener("click", closeSheetsModal);
+  $("sheets-cancel").addEventListener("click", closeSheetsModal);
+  $("sheets-save").addEventListener("click", () => {
+    setGoogleSheetUrl($("sheet-url").value.trim());
+    closeSheetsModal();
+    updateSheetsButton();
+    showNotification("Google Sheet URL saved!", "success");
+  });
+
+  // Form events
+  $("btn-cancel").addEventListener("click", showListView);
+  $("btn-cancel-top").addEventListener("click", showListView);
+
+  $("type-combo").addEventListener("change", () => {
+    currentOrderType = "combo";
+    $("combo-section").classList.remove("hidden");
+    $("custom-section").classList.add("hidden");
+    recalcTotals();
+  });
+  $("type-custom").addEventListener("change", () => {
+    currentOrderType = "custom";
+    $("combo-section").classList.add("hidden");
+    $("custom-section").classList.remove("hidden");
+    buildCustomItems();
+    recalcTotals();
+  });
+
+  $("advanceAmount").addEventListener("input", recalcTotals);
+
+  $("order-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    const total = currentTotal();
+    const adv = Number($("advanceAmount").value || 0);
+
+    const now = new Date().toISOString();
+    const orderId = $("orderId").value || generateOrderId();
+
+    const isEdit = !!(currentEditOrder && currentEditOrder.orderId);
+
+    const order = {
+      orderId,
+      customerName: $("customerName").value.trim(),
+      address: $("address").value.trim(),
+      attendantName: $("attendantName").value.trim(),
+      mobile: $("mobile").value.trim(),
+      pincode: $("pincode").value.trim(),
+      bookingDate: $("bookingDate").value || new Date().toISOString().split("T")[0],
+      expectedDelivery: $("expectedDelivery").value || "",
+      orderType: currentOrderType,
+      selectedCombo: currentOrderType === "combo" ? selectedComboKey : "",
+      customItems: currentOrderType === "custom" ? customItems : {},
+      totalAmount: total,
+      advanceAmount: adv,
+      balanceAmount: total - adv,
+      notes: $("notes").value.trim(),
+      status: isEdit ? $("status").value : "advance_received",
+      refundStatus: "none",
+      createdAt: isEdit ? (currentEditOrder.createdAt || now) : now,
+      updatedAt: now
+    };
+
+    saveOrder(order);
+    showListView();
+  });
+
+  // Receipt events
+  $("receipt-close").addEventListener("click", () => {
+    $("receipt-modal").classList.add("hidden");
+    $("receipt-modal").classList.remove("flex");
+  });
+  $("receipt-close-2").addEventListener("click", () => {
+    $("receipt-modal").classList.add("hidden");
+    $("receipt-modal").classList.remove("flex");
+  });
+  $("receipt-print").addEventListener("click", () => window.print());
+
+  // Build combo + custom for first form load
+  buildComboGrid();
+  updateComboSelectionUI();
+  buildCustomItems();
+
+  lucide.createIcons();
+}
+
+init();
+</script>
+</body>
+</html>
