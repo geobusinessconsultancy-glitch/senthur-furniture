@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -12,88 +13,87 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-  @media print {
-    @page { size: A4; margin: 0; }
+    @media print {
+      @page { size: A4; margin: 0; }
 
-    html, body { height: auto !important; }
-    body {
-      background: #fff !important;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-      overflow: visible !important;
+      html, body { height: auto !important; }
+      body {
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        overflow: visible !important;
+      }
+
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+
+      /* ✅ Force only the receipt content to print */
+      body * { visibility: hidden !important; }
+      #receipt-modal, #receipt-modal * { visibility: visible !important; }
+
+      /* ✅ Remove modal overlay sizing */
+      #receipt-modal{
+        position: fixed !important;
+        inset: 0 !important;
+        display: block !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* ✅ The white “card” must NOT restrict A4 */
+      #receipt-modal > div{
+        width: 210mm !important;
+        max-width: 210mm !important;
+        height: 297mm !important;
+        max-height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+      }
+
+      /* ✅ Remove inner padding that pushes content to 2nd page */
+      #receipt-modal > div > div{
+        padding: 0 !important; /* was p-6 */
+        margin: 0 !important;
+      }
+
+      .receipt-sheet{
+        width: 210mm !important;
+        height: 297mm !important;     /* ✅ fixed height prevents 2 pages */
+        min-height: 297mm !important;
+        position: relative;
+        overflow: hidden !important;  /* ✅ prevents spilling to next page */
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      .receipt-sheet::before{
+        content:"";
+        position:absolute;
+        inset:0;
+        background: url("https://i.postimg.cc/fRTmH21q/GSTIN-33DNQPS5340B1ZZ-20260122-235847-0000.png") no-repeat center top;
+        background-size: cover;
+        z-index:0;
+      }
+
+      .receipt-body{
+        position:relative;
+        z-index:1;
+        padding: 68mm 14mm 18mm 14mm; /* adjust if needed */
+        height: 297mm;
+        box-sizing: border-box;
+        overflow: hidden;             /* ✅ no extra height */
+      }
+
+      table, tr, td, th { page-break-inside: avoid !important; }
     }
 
-    .no-print { display: none !important; }
-    .print-only { display: block !important; }
-
-    /* ✅ Force only the receipt content to print */
-    body * { visibility: hidden !important; }
-    #receipt-modal, #receipt-modal * { visibility: visible !important; }
-
-    /* ✅ Remove modal overlay sizing */
-    #receipt-modal{
-      position: fixed !important;
-      inset: 0 !important;
-      display: block !important;
-      background: transparent !important;
-      padding: 0 !important;
-      margin: 0 !important;
-    }
-
-    /* ✅ The white “card” must NOT restrict A4 */
-    #receipt-modal > div{
-      width: 210mm !important;
-      max-width: 210mm !important;
-      height: 297mm !important;
-      max-height: 297mm !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      overflow: hidden !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      background: transparent !important;
-    }
-
-    /* ✅ Remove inner padding that pushes content to 2nd page */
-    #receipt-modal > div > div{
-      padding: 0 !important; /* was p-6 */
-      margin: 0 !important;
-    }
-
-    .receipt-sheet{
-      width: 210mm !important;
-      height: 297mm !important;     /* ✅ fixed height prevents 2 pages */
-      min-height: 297mm !important;
-      position: relative;
-      overflow: hidden !important;  /* ✅ prevents spilling to next page */
-      page-break-after: avoid !important;
-      page-break-inside: avoid !important;
-    }
-
-    .receipt-sheet::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background: url("https://i.postimg.cc/fRTmH21q/GSTIN-33DNQPS5340B1ZZ-20260122-235847-0000.png") no-repeat center top;
-      background-size: cover;
-      z-index:0;
-    }
-
-    .receipt-body{
-      position:relative;
-      z-index:1;
-      padding: 68mm 14mm 18mm 14mm; /* adjust if needed */
-      height: 297mm;
-      box-sizing: border-box;
-      overflow: hidden;             /* ✅ no extra height */
-    }
-
-    table, tr, td, th { page-break-inside: avoid !important; }
-  }
-
-  .print-only { display: none; }
-</style>
-
+    .print-only { display: none; }
+  </style>
 </head>
 
 <body class="min-h-screen bg-gray-50">
@@ -183,7 +183,10 @@
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Mobile *</label>
-                <input id="mobile" type="tel" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
+                <input id="mobile" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10"
+       class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"
+       oninput="this.value=this.value.replace(/[^0-9]/g,'');"/>
+
                 <p id="err-mobile" class="text-red-600 text-sm mt-1 hidden">Required</p>
               </div>
 
@@ -195,14 +198,16 @@
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Pincode *</label>
-                <input id="pincode" type="text" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
+                <input id="pincode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+       class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"
+       oninput="this.value=this.value.replace(/[^0-9]/g,'');"/>
+
                 <p id="err-pincode" class="text-red-600 text-sm mt-1 hidden">Required</p>
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Attendant *</label>
                 <input id="attendantName" type="text" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
-                <p id="err-attendantNameiame" class="text-red-600 text-sm mt-1 hidden">Required</p>
                 <p id="err-attendantName" class="text-red-600 text-sm mt-1 hidden">Required</p>
               </div>
 
@@ -218,29 +223,8 @@
             </div>
           </div>
 
-          <!-- Order Type -->
-          <div>
-            <h3 class="text-lg font-semibold mb-4">Order Type</h3>
-            <div class="flex gap-4">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input id="type-combo" type="radio" name="orderType" value="combo" class="w-4 h-4 text-green-600" checked>
-                <span class="font-medium">Combo Package</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input id="type-custom" type="radio" name="orderType" value="custom" class="w-4 h-4 text-green-600">
-                <span class="font-medium">Custom Items</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Combo section -->
-          <div id="combo-section">
-            <h3 class="text-lg font-semibold mb-4">Select Combo</h3>
-            <div id="combo-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-          </div>
-
-          <!-- Custom items section -->
-          <div id="custom-section" class="hidden">
+          <!-- Custom items section (always on) -->
+          <div id="custom-section">
             <h3 class="text-lg font-semibold mb-4">Select Items</h3>
             <p id="err-items" class="text-red-600 text-sm mb-2 hidden">Select at least one item</p>
             <div id="custom-items" class="space-y-2"></div>
@@ -385,15 +369,6 @@
 
 <script>
 /* ------------------ DATA ------------------ */
-const COMBOS = {
-  COMBO_1: { name: 'BEDROOM STARTER', items: [{ name:'BED', qty:1, price:15000 }, { name:'PILLOW', qty:2, price:800 }], total:16600 },
-  COMBO_2: { name: 'LIVING ROOM BASIC', items: [{ name:'SOFA', qty:1, price:25000 }, { name:'TV STAND', qty:1, price:8000 }, { name:'TEA POY', qty:1, price:5000 }], total:38000 },
-  COMBO_3: { name: 'DINING SET', items: [{ name:'DINING TABLE', qty:1, price:18000 }, { name:'CHAIR', qty:4, price:3500 }], total:32000 },
-  COMBO_4: { name: 'HOME OFFICE', items: [{ name:'COMPUTER TABLE', qty:1, price:12000 }, { name:'CHAIR', qty:1, price:3500 }], total:15500 },
-  COMBO_5: { name: 'COMPLETE BEDROOM', items: [{ name:'BED', qty:1, price:20000 }, { name:'DRESSING TABLE', qty:1, price:9000 }, { name:'PILLOW', qty:2, price:1000 }], total:31000 },
-  COMBO_6: { name: 'FULL HOME PACKAGE', items: [{ name:'BED', qty:1, price:18000 }, { name:'SOFA', qty:1, price:22000 }, { name:'DINING TABLE', qty:1, price:15000 }, { name:'CHAIR', qty:4, price:3000 }], total:76000 }
-};
-
 const FURNITURE_ITEMS = [
   'COT','BED','PILLOW','BERO','DRESSING TABLE','SOFA',
   'DINING TABLE','COMPUTER TABLE','TV STAND','POOJA STAND',
@@ -406,9 +381,8 @@ const SHEET_URL_KEY = "google-sheet-url";
 /* ------------------ STATE ------------------ */
 let orders = [];
 let currentEditOrder = null; // object or null
-let selectedComboKey = "COMBO_1";
-let customItems = {}; // { ITEM: {qty, price} }
-let currentOrderType = "combo";
+let customItems = {}; // { ITEM: {qty, price, spec} }
+let currentOrderType = "custom"; // fixed
 
 /* ------------------ HELPERS ------------------ */
 const $ = (id) => document.getElementById(id);
@@ -425,6 +399,18 @@ function showNotification(message, type="info") {
 function formatINR(n) {
   try { return "₹" + Number(n || 0).toLocaleString("en-IN"); }
   catch { return "₹" + (n || 0); }
+}
+function whatsappLink(order) {
+  // keep only digits
+  const phone = String(order.mobile || "").replace(/[^0-9]/g, "");
+
+  // If your numbers are India, add country code 91 when length is 10
+  const waNumber = (phone.length === 10) ? ("91" + phone) : phone;
+
+  const msg =
+`வணக்கம் ${order.customerName || ""}, Sri Senthur Furniture. உங்கள் ஆர்டர் ${order.orderId || ""}. தயவுசெய்து பின்வரும் மாடல்களில் உங்கள் விருப்பமான டிசைனை தேர்வு செய்யவும்.`;
+
+  return `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
 }
 
 function generateOrderId() {
@@ -447,8 +433,8 @@ function loadOrders() {
   orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
-function saveOrder(order_toggle) {
-  localStorage.setItem(`${STORAGE_PREFIX}${order_toggle.orderId}`, JSON.stringify(order_toggle));
+function saveOrder(order) {
+  localStorage.setItem(`${STORAGE_PREFIX}${order.orderId}`, JSON.stringify(order));
   loadOrders();
   renderList();
   showNotification("Order saved successfully!", "success");
@@ -528,7 +514,15 @@ function renderList() {
 
       <div class="space-y-1 mb-3 text-sm">
         <p class="font-semibold text-gray-900">${order.customerName || ""}</p>
-        <p class="text-gray-600">📱 ${order.mobile || ""}</p>
+        <div class="flex items-center justify-between gap-2">
+  <p class="text-gray-600">📱 ${order.mobile || ""}</p>
+
+  <a href="${whatsappLink(order)}" target="_blank"
+     class="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700">
+    WhatsApp
+  </a>
+</div>
+
         <p class="text-gray-600 truncate">📍 ${order.address || ""}</p>
         <p class="text-gray-500 text-xs">${createdDate}</p>
       </div>
@@ -573,57 +567,31 @@ function clearErrors() {
   $("err-advanceAmount").textContent = "";
 }
 
-function buildComboGrid() {
-  const wrap = $("combo-grid");
-  wrap.innerHTML = "";
-  Object.entries(COMBOS).forEach(([key, combo]) => {
-    const div = document.createElement("div");
-    div.className = "p-4 border-2 rounded-lg cursor-pointer border-gray-300 hover:border-green-400";
-    div.dataset.comboKey = key;
-
-    div.innerHTML = `
-      <h4 class="font-bold mb-2">${combo.name}</h4>
-      <ul class="text-sm space-y-1 mb-3">
-        ${combo.items.map(it => `<li class="text-gray-600">${it.qty}x ${it.name}</li>`).join("")}
-      </ul>
-      <p class="font-bold text-green-600">${formatINR(combo.total)}</p>
-    `;
-
-    div.addEventListener("click", () => {
-      selectedComboKey = key;
-      updateComboSelectionUI();
-      recalcTotals();
-    });
-
-    wrap.appendChild(div);
-  });
-}
-
-function updateComboSelectionUI() {
-  const cards = $("combo-grid").querySelectorAll("[data-combo-key]");
-  cards.forEach(card => {
-    const isSel = card.dataset.comboKey === selectedComboKey;
-    card.className = "p-4 border-2 rounded-lg cursor-pointer " + (isSel
-      ? "border-green-600 bg-green-50"
-      : "border-gray-300 hover:border-green-400");
-  });
-}
-
 function buildCustomItems() {
   const wrap = $("custom-items");
   wrap.innerHTML = "";
+
   FURNITURE_ITEMS.forEach(item => {
     const row = document.createElement("div");
-    row.className = "flex items-center gap-4 p-3 border rounded-lg";
+    row.className = "flex items-center gap-4 p-3 border rounded-lg flex-wrap";
 
     const checked = !!customItems[item];
+
     row.innerHTML = `
       <input type="checkbox" class="w-5 h-5 text-green-600" ${checked ? "checked" : ""} />
       <span class="flex-1 font-medium">${item}</span>
-      <div class="custom-controls ${checked ? "" : "hidden"} flex items-center gap-2 flex-wrap justify-end">
-        <input type="number" min="1" class="qty w-20 px-2 py-1 border border-gray-300 rounded" placeholder="Qty" value="${checked ? customItems[item].qty : 1}">
+
+      <div class="custom-controls ${checked ? "" : "hidden"} flex items-center gap-2 flex-wrap justify-end w-full md:w-auto">
+        <input type="number" min="1" class="qty w-20 px-2 py-1 border border-gray-300 rounded" placeholder="Qty"
+          value="${checked ? customItems[item].qty : 1}">
         <span>×</span>
-        <input type="number" min="0" class="price w-32 px-2 py-1 border border-gray-300 rounded" placeholder="Price" value="${checked ? customItems[item].price : 0}">
+        <input type="number" min="0" class="price w-32 px-2 py-1 border border-gray-300 rounded" placeholder="Price"
+          value="${checked ? customItems[item].price : 0}">
+
+        <input type="text" class="spec w-full md:w-72 px-2 py-1 border border-gray-300 rounded"
+          placeholder="Customization (size / color / model / remarks...)"
+          value="${checked ? (customItems[item].spec || '') : ''}">
+
         <span class="lineTotal font-semibold w-32 text-right">= ${formatINR(checked ? (customItems[item].qty * customItems[item].price) : 0)}</span>
       </div>
     `;
@@ -632,6 +600,7 @@ function buildCustomItems() {
     const controls = row.querySelector(".custom-controls");
     const qtyEl = row.querySelector(".qty");
     const priceEl = row.querySelector(".price");
+    const specEl = row.querySelector(".spec");
     const lineTotalEl = row.querySelector(".lineTotal");
 
     function updateLineTotal() {
@@ -642,7 +611,7 @@ function buildCustomItems() {
 
     checkbox.addEventListener("change", () => {
       if (checkbox.checked) {
-        customItems[item] = { qty: 1, price: 0 };
+        customItems[item] = { qty: 1, price: 0, spec: "" };
         controls.classList.remove("hidden");
       } else {
         delete customItems[item];
@@ -666,15 +635,20 @@ function buildCustomItems() {
       recalcTotals();
     });
 
+    specEl.addEventListener("input", () => {
+      if (!customItems[item]) return;
+      customItems[item].spec = specEl.value;
+    });
+
     wrap.appendChild(row);
   });
 }
 
 function currentTotal() {
-  if (currentOrderType === "combo") {
-    return COMBOS[selectedComboKey].total;
-  }
-  return Object.entries(customItems).reduce((sum,[_,d]) => sum + (Number(d.qty||0)*Number(d.price||0)), 0);
+  return Object.entries(customItems).reduce(
+    (sum,[_,d]) => sum + (Number(d.qty||0) * Number(d.price||0)),
+    0
+  );
 }
 
 function recalcTotals() {
@@ -688,7 +662,6 @@ function recalcTotals() {
 
 function fillForm(order) {
   clearErrors();
-  buildComboGrid();
 
   // default values
   const today = new Date().toISOString().split("T")[0];
@@ -696,10 +669,7 @@ function fillForm(order) {
 
   // reset state
   customItems = {};
-  selectedComboKey = "COMBO_1";
-  currentOrderType = "combo";
-  $("type-combo").checked = true;
-  $("type-custom").checked = false;
+  currentOrderType = "custom";
 
   // edit/new UI bits
   const isEdit = !!order;
@@ -718,9 +688,6 @@ function fillForm(order) {
     $("advanceAmount").value = 0;
     $("notes").value = "";
     $("status").value = "advance_received";
-    $("combo-section").classList.remove("hidden");
-    $("custom-section").classList.add("hidden");
-    updateComboSelectionUI();
     buildCustomItems();
     recalcTotals();
     return;
@@ -739,20 +706,9 @@ function fillForm(order) {
   $("notes").value = order.notes || "";
   $("status").value = order.status || "advance_received";
 
-  currentOrderType = order.orderType || "combo";
-  if (currentOrderType === "combo") {
-    $("type-combo").checked = true;
-    $("combo-section").classList.remove("hidden");
-    $("custom-section").classList.add("hidden");
-    selectedComboKey = order.selectedCombo || "COMBO_1";
-  } else {
-    $("type-custom").checked = true;
-    $("combo-section").classList.add("hidden");
-    $("custom-section").classList.remove("hidden");
-    customItems = order.customItems || {};
-  }
+  // custom always
+  customItems = order.customItems || {};
 
-  updateComboSelectionUI();
   buildCustomItems();
   recalcTotals();
 }
@@ -788,7 +744,7 @@ function validateForm() {
     ok = false;
   }
 
-  if (currentOrderType === "custom" && Object.keys(customItems).length === 0) {
+  if (Object.keys(customItems).length === 0) {
     $("err-items").classList.remove("hidden");
     ok = false;
   }
@@ -798,8 +754,12 @@ function validateForm() {
 
 /* ------------------ RECEIPT ------------------ */
 function getOrderItems(order) {
-  if (order.orderType === "combo") return COMBOS[order.selectedCombo].items;
-  return Object.entries(order.customItems || {}).map(([name,data]) => ({ name, qty:Number(data.qty||0), price:Number(data.price||0) }));
+  return Object.entries(order.customItems || {}).map(([name,data]) => ({
+    name,
+    qty: Number(data.qty || 0),
+    price: Number(data.price || 0),
+    spec: (data.spec || "").trim()
+  }));
 }
 
 function openReceipt(order) {
@@ -807,8 +767,11 @@ function openReceipt(order) {
   const bookingDate = order.bookingDate ? new Date(order.bookingDate).toLocaleDateString() : "";
 
   const rows = items.map(it => `
-    <tr class="border-b">
-      <td class="py-2">${it.name}</td>
+    <tr class="border-b align-top">
+      <td class="py-2">
+        <div class="font-medium">${it.name}</div>
+        ${it.spec ? `<div class="text-xs text-gray-500">${it.spec}</div>` : ``}
+      </td>
       <td class="text-center py-2">${it.qty}</td>
       <td class="text-right py-2">${formatINR(it.price)}</td>
       <td class="text-right py-2 font-semibold">${formatINR(it.qty * it.price)}</td>
@@ -885,8 +848,7 @@ function openReceipt(order) {
         <p class="text-sm">${order.notes}</p>
       </div>
     ` : ""}
-
-      `;
+  `;
 
   $("receipt-modal").classList.remove("hidden");
   $("receipt-modal").classList.add("flex");
@@ -897,13 +859,10 @@ function openReceipt(order) {
 function exportToCSV() {
   const headers = ['Order ID','Date','Customer','Mobile','Address','Pincode','Attendant','Type','Items','Total','Advance','Balance','Status'];
   const rows = orders.map(o => {
-    let itemsList = '';
-    if (o.orderType === 'combo') {
-      const combo = COMBOS[o.selectedCombo];
-      itemsList = combo.items.map(item => `${item.qty}x ${item.name}`).join('; ');
-    } else {
-      itemsList = Object.entries(o.customItems || {}).map(([name, data]) => `${data.qty}x ${name}`).join('; ');
-    }
+    const itemsList = Object.entries(o.customItems || {})
+      .map(([name, data]) => `${data.qty}x ${name}${data.spec ? ` (${String(data.spec).replace(/\s+/g,' ').trim()})` : ""}`)
+      .join('; ');
+
     return [
       o.orderId,
       new Date(o.createdAt).toLocaleString(),
@@ -912,7 +871,7 @@ function exportToCSV() {
       o.address,
       o.pincode,
       o.attendantName,
-      o.orderType,
+      "custom",
       itemsList,
       o.totalAmount,
       o.advanceAmount,
@@ -1003,20 +962,6 @@ function init() {
   $("btn-cancel").addEventListener("click", showListView);
   $("btn-cancel-top").addEventListener("click", showListView);
 
-  $("type-combo").addEventListener("change", () => {
-    currentOrderType = "combo";
-    $("combo-section").classList.remove("hidden");
-    $("custom-section").classList.add("hidden");
-    recalcTotals();
-  });
-  $("type-custom").addEventListener("change", () => {
-    currentOrderType = "custom";
-    $("combo-section").classList.add("hidden");
-    $("custom-section").classList.remove("hidden");
-    buildCustomItems();
-    recalcTotals();
-  });
-
   $("advanceAmount").addEventListener("input", recalcTotals);
 
   $("order-form").addEventListener("submit", (e) => {
@@ -1040,9 +985,9 @@ function init() {
       pincode: $("pincode").value.trim(),
       bookingDate: $("bookingDate").value || new Date().toISOString().split("T")[0],
       expectedDelivery: $("expectedDelivery").value || "",
-      orderType: currentOrderType,
-      selectedCombo: currentOrderType === "combo" ? selectedComboKey : "",
-      customItems: currentOrderType === "custom" ? customItems : {},
+      orderType: "custom",
+      selectedCombo: "",
+      customItems: customItems,
       totalAmount: total,
       advanceAmount: adv,
       balanceAmount: total - adv,
@@ -1068,9 +1013,7 @@ function init() {
   });
   $("receipt-print").addEventListener("click", () => window.print());
 
-  // Build combo + custom for first form load
-  buildComboGrid();
-  updateComboSelectionUI();
+  // Build custom
   buildCustomItems();
 
   lucide.createIcons();
@@ -1080,3 +1023,4 @@ init();
 </script>
 </body>
 </html>
+```
