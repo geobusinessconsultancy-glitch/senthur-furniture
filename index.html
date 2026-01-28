@@ -448,12 +448,13 @@ function deleteOrder(orderId) {
   showNotification("Order deleted", "success");
 }
 
+const DEFAULT_SHEETS_WEBAPP_URL =
+  "https://script.google.com/macros/s/AKfycbx9UV7GzxNh8oXJY43_4Z--mO1UiVPiG9zUsPjZTHDdO9_zIWZmPNR9pJmQ3lTY4opeWA/exec";
+
 function getGoogleSheetUrl() {
-  return localStorage.getItem(SHEET_URL_KEY) || "";
+  return DEFAULT_SHEETS_WEBAPP_URL; // ✅ same for all devices
 }
-function setGoogleSheetUrl(url) {
-  localStorage.setItem(SHEET_URL_KEY, url);
-}
+
 async function pushOrderToSheet(order) {
   const webAppUrl = getGoogleSheetUrl(); // must be the Apps Script Web App URL
   if (!webAppUrl) return;
@@ -996,15 +997,16 @@ function init() {
   $("search").addEventListener("input", renderList);
   $("btn-csv").addEventListener("click", exportToCSV);
 
-  $("btn-sheets").addEventListener("click", openSheetsModal);
-  $("sheets-close").addEventListener("click", closeSheetsModal);
-  $("sheets-cancel").addEventListener("click", closeSheetsModal);
-  $("sheets-save").addEventListener("click", () => {
-    setGoogleSheetUrl($("sheet-url").value.trim());
-    closeSheetsModal();
-    updateSheetsButton();
-    showNotification("Google Sheet URL saved!", "success");
-  });
+  if ($("btn-sheets")) $("btn-sheets").addEventListener("click", openSheetsModal);
+if ($("sheets-close")) $("sheets-close").addEventListener("click", closeSheetsModal);
+if ($("sheets-cancel")) $("sheets-cancel").addEventListener("click", closeSheetsModal);
+if ($("sheets-save")) $("sheets-save").addEventListener("click", () => {
+  setGoogleSheetUrl($("sheet-url").value.trim());
+  closeSheetsModal();
+  updateSheetsButton();
+  showNotification("Google Sheet URL saved!", "success");
+});
+
 
   // Form events
   $("btn-cancel").addEventListener("click", showListView);
@@ -1074,5 +1076,6 @@ init();
 </script>
 </body>
 </html>
+
 
 
