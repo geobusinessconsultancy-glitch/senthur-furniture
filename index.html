@@ -474,7 +474,7 @@ function deleteOrder(orderId) {
 
 const DEFAULT_SHEETS_WEBAPP_URL =
   "https://script.google.com/macros/s/AKfycbx9UV7GzxNh8oXJY43_4Z--mO1UiVPiG9zUsPjZTHDdO9_zIWZmPNR9pJmQ3lTY4opeWA/exec";
-
+   
 function getGoogleSheetUrl() {
   return DEFAULT_SHEETS_WEBAPP_URL; // ✅ same for all devices
 }
@@ -1078,7 +1078,7 @@ function openReceipt(order) {
 
 /* ------------------ CSV ------------------ */
 function exportToCSV() {
-  const headers = ['Order ID','Date','Customer','Mobile','Address','Pincode','Attendant','Type','Items','Total','Advance','Balance','Status'];
+  const headers = ['Order ID','Date','Customer','Mobile','Address','Pincode','Attendant','Attendant Phone','Type','Items','Total','Advance','Balance','Status'];
   const rows = orders.map(o => {
     const itemsList = Object.entries(o.customItems || {})
       .map(([name, data]) => `${data.qty}x ${name}${data.spec ? ` (${String(data.spec).replace(/\s+/g,' ').trim()})` : ""}`)
@@ -1256,6 +1256,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
