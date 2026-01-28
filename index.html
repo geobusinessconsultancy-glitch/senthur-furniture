@@ -103,12 +103,12 @@
       <div class="flex items-center gap-4">
         <!-- Image logo -->
         <div class="w-20 h-20 flex-shrink-0 bg-white rounded-lg border border-gray-200 p-1">
-          <img src="https://i.postimg.cc/xdH3rG6k/mailu.png" alt="Senthur Furniture Logo" class="w-full h-full object-contain"/>
+          <img src="https://i.postimg.cc/xdH3rG6k/mailu.png" alt="Sri Senthur Furniture Logo" class="w-full h-full object-contain"/>
         </div>
 
         <div class="flex-1">
-          <h1 class="text-2xl font-bold text-gray-900">ஸ்ரீ செந்தூர் பர்னிச்சர்ஸ்</h1>
-          <p class="text-lg text-gray-600">Senthur Furniture</p>
+          <h1 class="text-2xl font-bold text-gray-1200">ஸ்ரீ செந்தூர் பர்னிச்சர்ஸ்</h1>
+          <p class="text-lg text-gray-600">Sri Senthur Furniture</p>
           <p class="text-sm text-gray-500">📞 74488 12333, 74489 12333</p>
         </div>
       </div>
@@ -206,10 +206,20 @@
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Attendant *</label>
-                <input id="attendantName" type="text" class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
-                <p id="err-attendantName" class="text-red-600 text-sm mt-1 hidden">Required</p>
-              </div>
+  <label class="block text-sm font-medium text-gray-700 mb-1">Attendant *</label>
+  <input id="attendantName" type="text"
+         class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
+  <p id="err-attendantName" class="text-red-600 text-sm mt-1 hidden">Required</p>
+</div>
+
+<div>
+  <label class="block text-sm font-medium text-gray-700 mb-1">Attendant Phone *</label>
+  <input id="attendantPhone" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10"
+         class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"
+         oninput="this.value=this.value.replace(/[^0-9]/g,'');"/>
+  <p id="err-attendantPhone" class="text-red-600 text-sm mt-1 hidden">Required</p>
+</div>
+
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Booking Date</label>
@@ -225,10 +235,26 @@
 
           <!-- Custom items section (always on) -->
           <div id="custom-section">
-            <h3 class="text-lg font-semibold mb-4">Select Items</h3>
-            <p id="err-items" class="text-red-600 text-sm mb-2 hidden">Select at least one item</p>
-            <div id="custom-items" class="space-y-2"></div>
-          </div>
+  <div class="flex items-center justify-between mb-2">
+    <h3 class="text-lg font-semibold">Select Items</h3>
+
+    <button type="button" id="btn-add-other"
+      class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-semibold text-sm">
+      + Add Other Item
+    </button>
+  </div>
+
+  <p id="err-items" class="text-red-600 text-sm mb-2 hidden">Select at least one item</p>
+  <p id="err-otherName" class="text-red-600 text-sm mb-2 hidden">Other item name is required</p>
+
+  <div id="custom-items" class="space-y-2"></div>
+
+  <div class="mt-4">
+    <h4 class="font-semibold mb-2">Others</h4>
+    <div id="other-items" class="space-y-2"></div>
+  </div>
+</div>
+
 
           <!-- Payment -->
           <div>
@@ -263,11 +289,10 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select id="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
               <option value="advance_received">Advance Received</option>
-              <option value="production">In Production</option>
+              <option value="quotation">Quotation</option>
               <option value="ready_for_delivery">Ready for Delivery</option>
               <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="refunded">Refunded</option>
+              <option value="cancelled_and_refunded">Cancelled and Refunded</option>
             </select>
           </div>
 
@@ -383,6 +408,7 @@ let orders = [];
 let currentEditOrder = null; // object or null
 let customItems = {}; // { ITEM: {qty, price, spec} }
 let currentOrderType = "custom"; // fixed
+let otherItems = []; // [{id, name}]
 
 /* ------------------ HELPERS ------------------ */
 const $ = (id) => document.getElementById(id);
@@ -473,7 +499,7 @@ async function pushOrderToSheet(order) {
 
   const payload = {
     sheetName,
-    rowData: [
+        rowData: [
       order.orderId,
       new Date(order.createdAt).toLocaleString(),
       order.customerName,
@@ -481,6 +507,7 @@ async function pushOrderToSheet(order) {
       order.address,
       order.pincode,
       order.attendantName,
+      order.attendantPhone || "",
       order.orderType || "custom",
       itemsText,
       order.totalAmount,
@@ -489,6 +516,7 @@ async function pushOrderToSheet(order) {
       order.status,
       order.notes || ""
     ]
+
   };
 
   const res = await fetch(webAppUrl, {
@@ -519,7 +547,7 @@ function showFormView(editOrder=null) {
 function statusBadgeClass(status) {
   if (status === "delivered") return "bg-green-100 text-green-800";
   if (status === "ready_for_delivery") return "bg-blue-100 text-blue-800";
-  if (status === "refunded") return "bg-red-100 text-red-800";
+  if (status === "cancelled_and_refunded") return "bg-red-100 text-red-800";
   return "bg-yellow-100 text-yellow-800";
 }
 
@@ -605,13 +633,142 @@ function renderList() {
 
 /* ------------------ FORM ------------------ */
 function clearErrors() {
-  ["customerName","mobile","address","pincode","attendantName"].forEach(k => {
+    ["customerName","mobile","address","pincode","attendantName","attendantPhone"].forEach(k => {
     const err = $("err-" + k);
     if (err) err.classList.add("hidden");
   });
   $("err-items").classList.add("hidden");
   $("err-advanceAmount").classList.add("hidden");
   $("err-advanceAmount").textContent = "";
+  $("err-otherName").classList.add("hidden");
+
+}
+function createOtherId() {
+  return "oth-" + Date.now() + "-" + Math.floor(Math.random() * 9000 + 1000);
+}
+
+function renderOtherItems() {
+  const wrap = $("other-items");
+  wrap.innerHTML = "";
+
+  otherItems.forEach((rowItem) => {
+    const { id, name } = rowItem;
+
+    // Ensure customItems has an entry if name exists
+    if (name && !customItems[name]) {
+      customItems[name] = { qty: 1, price: 0, spec: "" };
+    }
+
+    const data = name ? (customItems[name] || { qty: 1, price: 0, spec: "" }) : { qty: 1, price: 0, spec: "" };
+
+    const row = document.createElement("div");
+    row.className = "flex items-center gap-4 p-3 border rounded-lg flex-wrap";
+
+    row.innerHTML = `
+      <div class="flex-1 min-w-52">
+        <label class="block text-xs text-gray-500 mb-1">Item Name *</label>
+        <input type="text" class="otherName w-full px-2 py-1 border border-gray-300 rounded"
+               placeholder="Type item name..."
+               value="${name ? name.replace(/"/g, "&quot;") : ""}">
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap justify-end w-full md:w-auto">
+        <input type="number" min="1" class="qty w-20 px-2 py-1 border border-gray-300 rounded" placeholder="Qty"
+               value="${Number(data.qty || 1)}">
+        <span>×</span>
+        <input type="number" min="0" class="price w-32 px-2 py-1 border border-gray-300 rounded" placeholder="Price"
+               value="${Number(data.price || 0)}">
+
+        <input type="text" class="spec w-full md:w-72 px-2 py-1 border border-gray-300 rounded"
+               placeholder="Customization (size / color / model / remarks...)"
+               value="${(data.spec || "").replace(/"/g, "&quot;")}">
+
+        <span class="lineTotal font-semibold w-32 text-right">= ${formatINR(Number(data.qty || 0) * Number(data.price || 0))}</span>
+
+        <button type="button" class="btn-remove px-3 py-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 font-semibold text-sm">
+          Remove
+        </button>
+      </div>
+    `;
+
+    const nameEl = row.querySelector(".otherName");
+    const qtyEl = row.querySelector(".qty");
+    const priceEl = row.querySelector(".price");
+    const specEl = row.querySelector(".spec");
+    const lineTotalEl = row.querySelector(".lineTotal");
+    const removeBtn = row.querySelector(".btn-remove");
+
+    function updateLineTotalForKey(key) {
+      const d = customItems[key];
+      const qty = Number(d?.qty || 0);
+      const price = Number(d?.price || 0);
+      lineTotalEl.textContent = "= " + formatINR(qty * price);
+    }
+
+    nameEl.addEventListener("input", () => {
+      const newName = (nameEl.value || "").trim();
+
+      // hide error while typing
+      $("err-otherName").classList.add("hidden");
+
+      // If name changed: move customItems data from old name to new name
+      const oldName = rowItem.name;
+
+      if (oldName && oldName !== newName) {
+        // Move data (keep values)
+        const oldData = customItems[oldName];
+        delete customItems[oldName];
+
+        if (newName) {
+          customItems[newName] = oldData || { qty: 1, price: 0, spec: "" };
+        }
+      } else if (!oldName && newName) {
+        // new name first time
+        customItems[newName] = { qty: 1, price: 0, spec: "" };
+      }
+
+      rowItem.name = newName;
+
+      // Recalc using new key if present
+      if (newName) updateLineTotalForKey(newName);
+      recalcTotals();
+    });
+
+    qtyEl.addEventListener("input", () => {
+      const key = rowItem.name;
+      if (!key) return;
+      customItems[key].qty = Number(qtyEl.value || 0);
+      updateLineTotalForKey(key);
+      recalcTotals();
+    });
+
+    priceEl.addEventListener("input", () => {
+      const key = rowItem.name;
+      if (!key) return;
+      customItems[key].price = Number(priceEl.value || 0);
+      updateLineTotalForKey(key);
+      recalcTotals();
+    });
+
+    specEl.addEventListener("input", () => {
+      const key = rowItem.name;
+      if (!key) return;
+      customItems[key].spec = specEl.value;
+    });
+
+    removeBtn.addEventListener("click", () => {
+      // remove from otherItems
+      otherItems = otherItems.filter(x => x.id !== id);
+
+      // remove from customItems by name
+      if (rowItem.name) delete customItems[rowItem.name];
+
+      renderOtherItems();
+      recalcTotals();
+    });
+
+    wrap.appendChild(row);
+  });
 }
 
 function buildCustomItems() {
@@ -689,6 +846,9 @@ function buildCustomItems() {
 
     wrap.appendChild(row);
   });
+    // render others after preset items
+  renderOtherItems();
+
 }
 
 function currentTotal() {
@@ -731,10 +891,13 @@ function fillForm(order) {
     $("address").value = "";
     $("pincode").value = "";
     $("attendantName").value = "";
+    $("attendantPhone").value = "";
     $("expectedDelivery").value = "";
     $("advanceAmount").value = 0;
     $("notes").value = "";
-    $("status").value = "advance_received";
+    $("status").value = "quotation";
+    customItems = {};
+    otherItems = [];
     buildCustomItems();
     recalcTotals();
     return;
@@ -747,14 +910,17 @@ function fillForm(order) {
   $("address").value = order.address || "";
   $("pincode").value = order.pincode || "";
   $("attendantName").value = order.attendantName || "";
+  $("attendantPhone").value = order.attendantPhone || "";
   $("bookingDate").value = order.bookingDate || today;
   $("expectedDelivery").value = order.expectedDelivery || "";
   $("advanceAmount").value = Number(order.advanceAmount || 0);
   $("notes").value = order.notes || "";
-  $("status").value = order.status || "advance_received";
+  $("status").value = order.status || "quotation";
 
   // custom always
   customItems = order.customItems || {};
+    otherItems = order.otherItems || [];
+
 
   buildCustomItems();
   recalcTotals();
@@ -777,6 +943,8 @@ function validateForm() {
   req("address");
   req("pincode");
   req("attendantName");
+  req("attendantPhone");
+
 
   const total = currentTotal();
   const adv = Number($("advanceAmount").value || 0);
@@ -793,6 +961,12 @@ function validateForm() {
 
   if (Object.keys(customItems).length === 0) {
     $("err-items").classList.remove("hidden");
+    ok = false;
+  }
+    // Other item name validation
+  const hasEmptyOtherName = otherItems.some(x => !String(x.name || "").trim());
+  if (otherItems.length > 0 && hasEmptyOtherName) {
+    $("err-otherName").classList.remove("hidden");
     ok = false;
   }
 
@@ -841,9 +1015,11 @@ function openReceipt(order) {
           <p class="font-semibold capitalize">${(order.status||"").replace(/_/g," ")}</p>
         </div>
         <div>
-          <p class="text-gray-600">Attendant</p>
-          <p class="font-semibold">${order.attendantName || ""}</p>
+         <p class="text-gray-600">Attendant</p>
+         <p class="font-semibold">${order.attendantName || ""}</p>
+         <p class="text-sm text-gray-600">📞 ${order.attendantPhone || ""}</p>
         </div>
+
       </div>
     </div>
 
@@ -996,6 +1172,10 @@ function init() {
   $("btn-first").addEventListener("click", () => showFormView(null));
   $("search").addEventListener("input", renderList);
   $("btn-csv").addEventListener("click", exportToCSV);
+  $("btn-add-other").addEventListener("click", () => {
+    otherItems.push({ id: createOtherId(), name: "" });
+    renderOtherItems();
+  });
 
   if ($("btn-sheets")) $("btn-sheets").addEventListener("click", openSheetsModal);
 if ($("sheets-close")) $("sheets-close").addEventListener("click", closeSheetsModal);
@@ -1031,6 +1211,7 @@ if ($("sheets-save")) $("sheets-save").addEventListener("click", () => {
       customerName: $("customerName").value.trim(),
       address: $("address").value.trim(),
       attendantName: $("attendantName").value.trim(),
+      attendantPhone: $("attendantPhone").value.trim(),
       mobile: $("mobile").value.trim(),
       pincode: $("pincode").value.trim(),
       bookingDate: $("bookingDate").value || new Date().toISOString().split("T")[0],
@@ -1038,11 +1219,12 @@ if ($("sheets-save")) $("sheets-save").addEventListener("click", () => {
       orderType: "custom",
       selectedCombo: "",
       customItems: customItems,
+      otherItems: otherItems,
       totalAmount: total,
       advanceAmount: adv,
       balanceAmount: total - adv,
       notes: $("notes").value.trim(),
-      status: isEdit ? $("status").value : "advance_received",
+      status: isEdit ? $("status").value : "quotation",
       refundStatus: "none",
       createdAt: isEdit ? (currentEditOrder.createdAt || now) : now,
       updatedAt: now
@@ -1076,7 +1258,6 @@ init();
 </script>
 </body>
 </html>
-
 
 
 
