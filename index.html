@@ -204,23 +204,21 @@
 
                 <p id="err-pincode" class="text-red-600 text-sm mt-1 hidden">Required</p>
               </div>
-
               <div>
-  <label class="block text-sm font-medium text-gray-700 mb-1">Attendant *</label>
-  <input id="attendantName" type="text"
-         class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
-  <p id="err-attendantName" class="text-red-600 text-sm mt-1 hidden">Required</p>
-</div>
-
-<div>
-  <label class="block text-sm font-medium text-gray-700 mb-1">Attendant Phone *</label>
-  <input id="attendantPhone" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10"
-         class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"
-         oninput="this.value=this.value.replace(/[^0-9]/g,'');"/>
-  <p id="err-attendantPhone" class="text-red-600 text-sm mt-1 hidden">Required</p>
-</div>
-
-
+            <label class="block text-sm font-medium text-gray-700 mb-1">Attendant *</label>
+            <input id="attendantName" type="text"
+             class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"/>
+            <p id="err-attendantName" class="text-red-600 text-sm mt-1 hidden">Required</p>
+            </div>
+            <div>
+            </div>
+            <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Attendant Phone *</label>
+            <input id="attendantPhone" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10"
+            class="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'');"/>
+           <p id="err-attendantPhone" class="text-red-600 text-sm mt-1 hidden">Required</p>
+           </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Booking Date</label>
                 <input id="bookingDate" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"/>
@@ -1154,7 +1152,7 @@ function init() {
 
   if (!targetSheet) {
     targetSheet = sheet.insertSheet(sheetName);
-    targetSheet.appendRow(['Order ID', 'Date', 'Customer', 'Mobile', 'Address', 'Pincode', 'Attendant', 'Type', 'Items', 'Total', 'Advance', 'Balance', 'Status']);
+    targetSheet.appendRow(['Order ID', 'Date', 'Customer', 'Mobile', 'Address', 'Pincode', 'Attendant','Attendant Phone', 'Type', 'Items', 'Total', 'Advance', 'Balance', 'Status']);
   }
 
   targetSheet.appendRow(data.rowData);
@@ -1258,6 +1256,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
